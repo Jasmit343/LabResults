@@ -1,0 +1,56 @@
+ganache
+truffle migrate
+truffle console
+
+1. Retrieves the deyloyed contract.
+const labResults = await LabResults.deployed();
+
+
+2. Setting addresses for Patient and Doctors. 
+const patient = "0xc64B36324d8D73CFe49eB8F9094139F3B06AD1Aa";
+const authorizedDoctor = "0x069214E479587eB6D3e531cD8a540256aec11e1a";
+const unauthorizedDoctor = "0x2e3B6E945C9Bc656B4C0e0617C28D3801DdaBb4E";
+
+
+3. Authorising the Doctor.
+const authorizeTx = await labResults.authorizeDoctor(authorizedDoctor, { from: patient });
+console.log("Gas used for authorizing the doctor:", authorizeTx.receipt.gasUsed);
+
+4. Adding a Lab result by the authorised doctor.
+const addLabResultTx1 = await labResults.addLabResult("result1", patient, "encryptedData1", { from: authorizedDoctor });
+console.log("Gas used for adding lab result:", addLabResultTx1.receipt.gasUsed);
+
+5. Adding a Lab result by the unauthorised doctor. 
+await labResults.addLabResult("result2", patient, "encryptedData2", { from: unauthorizedDoctor });
+
+6. Check lab results.
+const result1 = await labResults.getLabResult("result1");
+const result2 = await labResults.getLabResult("result2");
+console.log(result1);
+console.log(result2);
+
+
+7. Audit Trails for Access Attempts
+const pastEvents = await labResults.getPastEvents('LabResultAdded', { fromBlock: 0, toBlock: 'latest' });
+pastEvents.forEach(event => { console.log(`Result ID: ${event.returnValues.resultId}, Patient: ${event.returnValues.patient}, Doctor: ${event.transactionHash}`); });
+
+
+
+8. Encrypting and Decrypting Data
+const encryptedData = btoa("Sensitive Lab Result");
+console.log("Encrypted Data being added:", encryptedData);
+
+
+#add encrypted lab result
+const addLabResultTx2 = await labResults.addLabResult("result3", patient, encryptedData, { from: authorizedDoctor });
+console.log("Gas used for adding encrypted lab result:", addLabResultTx2.receipt.gasUsed);
+
+
+#retrieve lab result
+const result = await labResults.getLabResult("result3");
+console.log("Stored Encrypted Data:", result.encryptedData);
+
+
+#Decrypt data
+const decryptedData = atob(result.encryptedData);
+console.log("Decrypted Data:", decryptedData);
